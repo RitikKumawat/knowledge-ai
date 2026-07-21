@@ -25,7 +25,7 @@
 }
 
 /* Mantine color variables overrides */
-[data-mantine-color-scheme='light'] {
+:global([data-mantine-color-scheme='light']) {
   --mantine-color-body: var(--bg-primary);
   --mantine-color-text: var(--text-primary);
   --mantine-color-dimmed: var(--text-secondary);
@@ -34,7 +34,7 @@
   --mantine-color-default-border: var(--border);
 }
 
-[data-mantine-color-scheme='dark'] {
+:global([data-mantine-color-scheme='dark']) {
   --mantine-color-body: var(--dark-bg-primary);
   --mantine-color-text: var(--dark-text);
   --mantine-color-dimmed: var(--dark-secondary-text);
