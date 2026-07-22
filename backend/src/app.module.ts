@@ -35,6 +35,16 @@ import { Request, Response } from 'express';
       sortSchema: true,
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
+      includeStacktraceInErrorResponses: false,
+      formatError: (formattedError) => {
+        return {
+          message: formattedError.message,
+          extensions: {
+            code: formattedError.extensions?.code,
+            originalError: formattedError.extensions?.originalError,
+          },
+        };
+      },
       context: ({
         req,
         res,

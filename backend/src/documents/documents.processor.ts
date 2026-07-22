@@ -1,6 +1,8 @@
 import { Process, Processor } from '@nestjs/bull';
 import type { Job } from 'bull';
 import { InjectModel } from '@nestjs/mongoose';
+import { Inject } from '@nestjs/common';
+import { PubSub } from 'graphql-subscriptions';
 import {
   UploadedDoc,
   UploadedDocDocument,
@@ -33,6 +35,7 @@ export class DocumentsProcessor {
     @InjectModel(DocumentChunk.name)
     private readonly documentChunkModel: Model<DocumentChunkDocument>,
     private readonly embeddingsService: EmbeddingsService,
+    @Inject('PUB_SUB') private readonly pubSub: PubSub,
   ) {}
 
   @Process('process')
@@ -48,6 +51,9 @@ export class DocumentsProcessor {
 
     doc.status = 'PROCESSING';
     await doc.save();
+    this.pubSub.publish('documentStatusUpdated', {
+      documentStatusUpdated: doc,
+    });
 
     try {
       // Extract the filename from the URL
@@ -128,6 +134,9 @@ export class DocumentsProcessor {
       doc.pages = pagesCount;
       doc.chunksCount = chunksCount;
       await doc.save();
+      this.pubSub.publish('documentStatusUpdated', {
+        documentStatusUpdated: doc,
+      });
 
       console.log(`Successfully processed document ${documentId}`);
     } catch (error) {
@@ -136,6 +145,9 @@ export class DocumentsProcessor {
       doc.errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       await doc.save();
+      this.pubSub.publish('documentStatusUpdated', {
+        documentStatusUpdated: doc,
+      });
       throw error;
     }
   }

@@ -14,12 +14,14 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "query GetDocuments($pagination: PaginationInput) {\n  documents(pagination: $pagination) {\n    items {\n      _id\n      filename\n      fileUrl\n      pages\n      chunksCount\n      status\n      createdAt\n      updatedAt\n    }\n    totalCount\n    page\n    totalPages\n  }\n}\n\nmutation UploadDocument($file: Upload!) {\n  uploadDocument(file: $file)\n}\n\nmutation DeleteDocument($id: ID!) {\n  deleteDocument(id: $id)\n}\n\nmutation ReprocessDocument($id: ID!) {\n  reprocessDocument(id: $id)\n}\n\nsubscription DocumentStatusUpdated {\n  documentStatusUpdated {\n    _id\n    filename\n    fileUrl\n    pages\n    chunksCount\n    status\n    createdAt\n    updatedAt\n  }\n}": typeof types.GetDocumentsDocument,
     "mutation UserLogin($input: UserLoginInput!) {\n  userLogin(input: $input)\n}": typeof types.UserLoginDocument,
     "mutation UserLogout {\n  userLogout\n}": typeof types.UserLogoutDocument,
     "mutation UserSignUp($input: UserSignupInput!) {\n  userSignUp(input: $input)\n}": typeof types.UserSignUpDocument,
     "query GetUserProfile {\n  getUserProfile {\n    _id\n    createdAt\n    email\n    name\n    updatedAt\n  }\n}": typeof types.GetUserProfileDocument,
 };
 const documents: Documents = {
+    "query GetDocuments($pagination: PaginationInput) {\n  documents(pagination: $pagination) {\n    items {\n      _id\n      filename\n      fileUrl\n      pages\n      chunksCount\n      status\n      createdAt\n      updatedAt\n    }\n    totalCount\n    page\n    totalPages\n  }\n}\n\nmutation UploadDocument($file: Upload!) {\n  uploadDocument(file: $file)\n}\n\nmutation DeleteDocument($id: ID!) {\n  deleteDocument(id: $id)\n}\n\nmutation ReprocessDocument($id: ID!) {\n  reprocessDocument(id: $id)\n}\n\nsubscription DocumentStatusUpdated {\n  documentStatusUpdated {\n    _id\n    filename\n    fileUrl\n    pages\n    chunksCount\n    status\n    createdAt\n    updatedAt\n  }\n}": types.GetDocumentsDocument,
     "mutation UserLogin($input: UserLoginInput!) {\n  userLogin(input: $input)\n}": types.UserLoginDocument,
     "mutation UserLogout {\n  userLogout\n}": types.UserLogoutDocument,
     "mutation UserSignUp($input: UserSignupInput!) {\n  userSignUp(input: $input)\n}": types.UserSignUpDocument,
@@ -40,6 +42,10 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "query GetDocuments($pagination: PaginationInput) {\n  documents(pagination: $pagination) {\n    items {\n      _id\n      filename\n      fileUrl\n      pages\n      chunksCount\n      status\n      createdAt\n      updatedAt\n    }\n    totalCount\n    page\n    totalPages\n  }\n}\n\nmutation UploadDocument($file: Upload!) {\n  uploadDocument(file: $file)\n}\n\nmutation DeleteDocument($id: ID!) {\n  deleteDocument(id: $id)\n}\n\nmutation ReprocessDocument($id: ID!) {\n  reprocessDocument(id: $id)\n}\n\nsubscription DocumentStatusUpdated {\n  documentStatusUpdated {\n    _id\n    filename\n    fileUrl\n    pages\n    chunksCount\n    status\n    createdAt\n    updatedAt\n  }\n}"): (typeof documents)["query GetDocuments($pagination: PaginationInput) {\n  documents(pagination: $pagination) {\n    items {\n      _id\n      filename\n      fileUrl\n      pages\n      chunksCount\n      status\n      createdAt\n      updatedAt\n    }\n    totalCount\n    page\n    totalPages\n  }\n}\n\nmutation UploadDocument($file: Upload!) {\n  uploadDocument(file: $file)\n}\n\nmutation DeleteDocument($id: ID!) {\n  deleteDocument(id: $id)\n}\n\nmutation ReprocessDocument($id: ID!) {\n  reprocessDocument(id: $id)\n}\n\nsubscription DocumentStatusUpdated {\n  documentStatusUpdated {\n    _id\n    filename\n    fileUrl\n    pages\n    chunksCount\n    status\n    createdAt\n    updatedAt\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
