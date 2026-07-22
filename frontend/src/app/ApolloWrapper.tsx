@@ -20,12 +20,9 @@ import { PUBLIC_ROUTES } from "../enum/routes.enum";
 function makeClient() {
   const uploadLink = new UploadHttpLink({
     uri: `${process.env.NEXT_PUBLIC_BASE_URL}/graphql`,
-    fetchOptions: {
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "apollo-require-preflight": "true",
-      },
+    credentials: "include",
+    headers: {
+      "apollo-require-preflight": "true",
     },
   });
 

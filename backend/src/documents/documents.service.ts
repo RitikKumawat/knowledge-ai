@@ -70,19 +70,43 @@ export class DocumentsService {
       uploadedBy: user._id,
     });
 
-    // Queue the background job for processing
-    await this.documentProcessingQueue.add('process', {
-      documentId: newDoc._id.toString(),
-      fileUrl: newDoc.fileUrl,
-    });
+    // Queue the background job for processing (fire and forget)
+    this.documentProcessingQueue
+      .add('process', {
+        documentId: newDoc._id.toString(),
+        fileUrl: newDoc.fileUrl,
+      })
+      .catch((err) => {
+        console.error('Failed to add document to processing queue:', err);
+      });
 
     return 'Document uploaded successfully';
   }
 
-  async listDocuments(user: UserDocument): Promise<UploadedDocDocument[]> {
-    return this.uploadedDocModel
-      .find({ uploadedBy: user._id })
-      .sort({ createdAt: -1 });
+  async listDocuments(
+    user: UserDocument,
+    pagination?: { page: number; limit: number },
+  ) {
+    const page = pagination?.page || 1;
+    const limit = pagination?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { uploadedBy: user._id };
+    const [items, totalCount] = await Promise.all([
+      this.uploadedDocModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      this.uploadedDocModel.countDocuments(query),
+    ]);
+
+    return {
+      items,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
   }
 
   async getDocumentDetails(
@@ -134,5 +158,27 @@ export class DocumentsService {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
+  }
+
+  async reprocessDocument(
+    id: Types.ObjectId,
+    user: UserDocument,
+  ): Promise<boolean> {
+    const doc = await this.getDocumentDetails(id, user);
+
+    doc.status = 'PENDING';
+    doc.errorMessage = undefined;
+    await doc.save();
+
+    this.documentProcessingQueue
+      .add('process', {
+        documentId: doc._id.toString(),
+        fileUrl: doc.fileUrl,
+      })
+      .catch((err) => {
+        console.error('Failed to add document to processing queue:', err);
+      });
+
+    return true;
   }
 }
