@@ -80,7 +80,7 @@ export class DocumentsProcessor {
       }
 
       // Chunk the text into words with overlap
-      const chunks = this.chunkText(textContent, 500, 50);
+      const chunks = this.chunkText(textContent, 250, 25);
       const chunksCount = chunks.length;
 
       if (chunksCount > 0) {
@@ -154,8 +154,8 @@ export class DocumentsProcessor {
 
   private chunkText(
     text: string,
-    chunkSize: number = 500,
-    overlap: number = 50,
+    chunkSize: number = 250,
+    overlap: number = 25,
   ): string[] {
     const chunks: string[] = [];
     const words = text.replace(/\s+/g, ' ').trim().split(' ');

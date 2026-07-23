@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { GetUserProfileDocument, UserLogoutDocument } from "@/generated/graphql";
+import { GetUserProfileDocument, UserLogoutDocument, GetChatSessionsDocument, GetDocumentsDocument } from "@/generated/graphql";
 import {
   AppShell,
   Button,
@@ -11,6 +11,7 @@ import {
   TextInput,
   Avatar,
   UnstyledButton,
+  ActionIcon,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -20,12 +21,14 @@ import {
   FileText,
   LayoutDashboard,
   Settings,
-  LogOut
+  LogOut,
+  Eye
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./ProtectedLayout.module.scss";
 import { notifications } from "@mantine/notifications";
+import { NewChatModal } from "@/components/NewChatModal";
 
 export default function ProtectedLayout({
   children,
@@ -33,21 +36,32 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }>) {
   const [opened] = useDisclosure();
+  const [newChatOpened, { open: openNewChat, close: closeNewChat }] = useDisclosure(false);
   const pathname = usePathname();
 
   const { data, loading, error } = useQuery(GetUserProfileDocument, {
     fetchPolicy: "network-only",
   });
-  const[logoutUser,{loading:loadingLogout}] = useMutation(UserLogoutDocument,{
-    onCompleted:()=>{
+  
+  const { data: chatData } = useQuery(GetChatSessionsDocument, {
+    variables: { pagination: { limit: 20, page: 1 } },
+  });
+
+  const { data: docsData } = useQuery(GetDocumentsDocument, {
+    variables: { pagination: { limit: 10, page: 1 } },
+  });
+
+  const [logoutUser, { loading: loadingLogout }] = useMutation(UserLogoutDocument, {
+    onCompleted: () => {
       notifications.show({
-        message:"User Logged out successfully",
-        title:"Success",
-        color:"green"
-      })
+        message: "User Logged out successfully",
+        title: "Success",
+        color: "green"
+      });
     },
-    refetchQueries:[GetUserProfileDocument]
-  })
+    refetchQueries: [GetUserProfileDocument]
+  });
+
   if (loading) {
     return (
       <Center style={{ height: "100vh" }}>
@@ -74,7 +88,6 @@ export default function ProtectedLayout({
 
   return (
     <AppShell
-      // header={{ height: 60 }}
       navbar={{
         width: 260,
         breakpoint: "sm",
@@ -95,73 +108,55 @@ export default function ProtectedLayout({
             radius="md"
             color="indigo"
             className={styles.newChatBtn}
+            onClick={openNewChat}
           >
             New Chat
           </Button>
 
-          <div className={styles.searchContainer}>
+          {/* <div className={styles.searchContainer}>
             <TextInput
               placeholder="Search..."
               leftSection={<Search size={16} />}
               radius="md"
               size="sm"
             />
-          </div>
+          </div> */}
 
           <div className={styles.scrollSection}>
-            {/* Recent Chats Section */}
             <div className={styles.sectionTitle}>Recent Chats</div>
-            <div className={`${styles.navItem} ${pathname === "/chat/jwt" ? styles.active : ""}`}>
-              <div className={styles.itemIcon}>
-                <MessageSquare size={16} />
-              </div>
-              <span className={styles.itemText}>JWT Authentication</span>
-            </div>
-            <div className={`${styles.navItem} ${pathname === "/chat/graphql" ? styles.active : ""}`}>
-              <div className={styles.itemIcon}>
-                <MessageSquare size={16} />
-              </div>
-              <span className={styles.itemText}>GraphQL Basics</span>
-            </div>
-            <div className={`${styles.navItem} ${pathname === "/chat/nodejs" ? styles.active : ""}`}>
-              <div className={styles.itemIcon}>
-                <MessageSquare size={16} />
-              </div>
-              <span className={styles.itemText}>NodeJS Security</span>
-            </div>
-            <div className={`${styles.navItem} ${pathname === "/chat/rag" ? styles.active : ""}`}>
-              <div className={styles.itemIcon}>
-                <MessageSquare size={16} />
-              </div>
-              <span className={styles.itemText}>RAG Architecture</span>
-            </div>
+            {chatData?.chatSessions.items.map((chat) => (
+              <Link href={`/chat/${chat._id}`} passHref key={chat._id} style={{ textDecoration: 'none' }}>
+                <UnstyledButton
+                  w={"100%"}
+                  className={`${styles.navItem} ${pathname === `/chat/${chat._id}` ? styles.active : ""}`}
+                >
+                  <div className={styles.itemIcon}>
+                    <MessageSquare size={16} />
+                  </div>
+                  <span className={styles.itemText}>{chat.title || "New Chat"}</span>
+                </UnstyledButton>
+              </Link>
+            ))}
 
-            {/* Documents Section */}
             <div className={styles.sectionTitle}>Documents</div>
-            <div className={styles.navItem}>
-              <div className={styles.itemIcon}>
-                <FileText size={16} />
-              </div>
-              <span className={styles.itemText}>jwt.pdf</span>
-            </div>
-            <div className={styles.navItem}>
-              <div className={styles.itemIcon}>
-                <FileText size={16} />
-              </div>
-              <span className={styles.itemText}>graphql.pdf</span>
-            </div>
-            <div className={styles.navItem}>
-              <div className={styles.itemIcon}>
-                <FileText size={16} />
-              </div>
-              <span className={styles.itemText}>nodejs-security.pdf</span>
-            </div>
+            {docsData?.documents.items.map((doc) => (
+              <Link href="/documents" passHref key={doc._id} style={{ textDecoration: 'none' }}>
+                <UnstyledButton
+                  w="100%"
+                  className={`${styles.navItem} ${pathname === '/documents' ? styles.active : ''}`}
+                >
+                  <div className={styles.itemIcon}>
+                    <FileText size={16} />
+                  </div>
+                  <span className={styles.itemText}>{doc.filename}</span>
+                </UnstyledButton>
+              </Link>
+            ))}
 
-            {/* Navigation Links */}
             <div className={styles.sectionTitle}>Dashboard</div>
-            <Link href="/dashboard" passHref>
+            <Link href="/dashboard" passHref style={{ textDecoration: 'none' }}>
               <UnstyledButton
-               w={"100%"}
+                w={"100%"}
                 className={`${styles.navItem} ${
                   pathname === "/dashboard" ? styles.active : ""
                 }`}
@@ -182,7 +177,6 @@ export default function ProtectedLayout({
             </div>
           </div>
 
-          {/* User Profile Card */}
           <div className={styles.userProfile}>
             <Avatar color="indigo" radius="xl">
               {userInitials}
@@ -205,6 +199,8 @@ export default function ProtectedLayout({
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
+
+      <NewChatModal opened={newChatOpened} onClose={closeNewChat} />
     </AppShell>
   );
 }
