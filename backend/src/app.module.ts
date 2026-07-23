@@ -20,6 +20,7 @@ import { MessageModule } from './message/message.module';
 import { PromptBuilderModule } from './prompt-builder/prompt-builder.module';
 import { OllamaModule } from './ollama/ollama.module';
 import { AskQuestionModule } from './ask-question/ask-question.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 import { PubSubModule } from './common/pubsub/pubsub.module';
 import { Request, Response } from 'express';
@@ -101,6 +102,7 @@ import { Request, Response } from 'express';
     PromptBuilderModule,
     OllamaModule,
     AskQuestionModule,
+    DashboardModule,
   ],
   providers: [
     AppService,

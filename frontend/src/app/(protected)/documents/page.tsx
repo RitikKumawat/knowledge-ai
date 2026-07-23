@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Upload, Trash2, RefreshCw } from "lucide-react";
+import { Upload, Trash2, RefreshCw, Eye } from "lucide-react";
 import { Modal, Button, Text, Group } from "@mantine/core";
 import { FTable, ColumnDef } from "../../../ui/FTable/FTable";
 import {
@@ -107,6 +107,13 @@ export default function DocumentsPage() {
               <RefreshCw size={16} />
             </button>
           )}
+          <button
+            className={classes.actionBtn}
+            onClick={() => window.open(doc.fileUrl, '_blank')}
+            title="View Document"
+          >
+            <Eye size={16} />
+          </button>
           <button
             className={classes.actionBtn}
             onClick={() => handleDelete(doc._id)}

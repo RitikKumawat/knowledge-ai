@@ -5,13 +5,20 @@ import ollama from 'ollama';
 export class EmbeddingsService {
   async generateEmbeddings(chunks: string[]): Promise<number[][]> {
     try {
-      const response = await ollama.embed({
-        model: 'nomic-embed-text',
-        input: chunks,
-        truncate: false,
-      });
+      const allEmbeddings: number[][] = [];
+      const batchSize = 10;
 
-      return response.embeddings;
+      for (let i = 0; i < chunks.length; i += batchSize) {
+        const batch = chunks.slice(i, i + batchSize);
+        const response = await ollama.embed({
+          model: 'nomic-embed-text',
+          input: batch,
+          truncate: true, // Safe fallback
+        });
+        allEmbeddings.push(...response.embeddings);
+      }
+
+      return allEmbeddings;
     } catch (error) {
       if (
         error instanceof TypeError &&
