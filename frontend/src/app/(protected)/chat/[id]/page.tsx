@@ -9,7 +9,7 @@ import {
   AnswerStreamDocument,
 } from "@/generated/graphql";
 import { useQuery, useMutation, useSubscription } from "@apollo/client/react";
-import { Loader, Center, ActionIcon, Text, Textarea, Box } from "@mantine/core";
+import { Loader, Center, ActionIcon, Text, Textarea, Box, Title, Paper, Group, Badge } from "@mantine/core";
 import { Send } from "lucide-react";
 import styles from "./Chat.module.scss";
 import { notifications } from "@mantine/notifications";
@@ -34,7 +34,7 @@ export default function ChatPage() {
   const [localMessages, setLocalMessages] = useState<Array<{ _id: string; role: string; content: string }>>([]);
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
-  // const [sources, setSources] = useState<Array<{ documentId: string; chunk: string; similarity: number }>>([]);
+  const [sources, setSources] = useState<Array<{ documentId: string; chunk: string; similarity: number }>>([]);
 
   const [prevMessagesData, setPrevMessagesData] = useState(messagesData);
   if (messagesData !== prevMessagesData) {
@@ -92,6 +92,9 @@ export default function ChatPage() {
           },
         },
       });
+      if(res.data?.askQuestion?.sources) {
+        setSources(res.data.askQuestion.sources);
+      }
     } catch (err) {
       setIsWaiting(false);
       notifications.show({
@@ -188,7 +191,7 @@ export default function ChatPage() {
           </ActionIcon>
         </div>
       </div>
-      {/* {sources.length > 0 && (
+      {sources.length > 0 && (
         <Box className={styles.sourcesPanel}>
           <Title order={3} className={styles.sourcesTitle}>Sources</Title>
           {sources.map((source, idx) => (
@@ -205,7 +208,7 @@ export default function ChatPage() {
             </Paper>
           ))}
         </Box>
-      )} */}
+      )}
     </div>
   );
 }
