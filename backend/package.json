@@ -22,6 +22,7 @@
   "dependencies": {
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
+    "@chroma-core/default-embed": "^0.1.9",
     "@nestjs/apollo": "^13.4.2",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^11.0.1",
