@@ -22,19 +22,16 @@ import {
   ChatSession,
   ChatSessionDocument,
 } from '../schemas/chatSessions.schema';
-import { ChromaClient } from 'chromadb';
 import { basename, join } from 'node:path';
 import { unlink } from 'node:fs/promises';
 
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 
+import { VectorDbService } from '../vector-db/vector-db.service';
+
 @Injectable()
 export class DocumentsService {
-  private readonly chromaClient = new ChromaClient({
-    path: process.env.CHROMA_URL || 'http://localhost:8000',
-  });
-
   constructor(
     @InjectModel(UploadedDoc.name)
     private readonly uploadedDocModel: Model<UploadedDocDocument>,
@@ -44,6 +41,7 @@ export class DocumentsService {
     private readonly documentChunkModel: Model<DocumentChunkDocument>,
     @InjectModel(ChatSession.name)
     private readonly chatSessionModel: Model<ChatSessionDocument>,
+    private readonly vectorDbService: VectorDbService,
   ) {}
 
   async uploadDocument(
@@ -131,12 +129,11 @@ export class DocumentsService {
   ): Promise<boolean> {
     const document = await this.getDocumentDetails(id, user);
     const documentId = id.toString();
-    const collection = await this.chromaClient.getOrCreateCollection({
-      name: 'documents',
-      embeddingFunction: null,
-    });
 
-    await collection.delete({ where: { documentId } });
+    await this.vectorDbService.deleteByDocumentId(
+      documentId,
+      document.chunksCount,
+    );
     await this.documentChunkModel.deleteMany({ documentId: id });
     await this.chatSessionModel.updateMany(
       { documentIds: id },

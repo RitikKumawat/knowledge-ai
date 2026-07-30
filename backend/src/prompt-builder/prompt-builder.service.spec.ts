@@ -18,13 +18,13 @@ describe('PromptBuilderService', () => {
     expect(service).toBeDefined();
   });
 
-  it('builds a prompt from conversation, context, and a question', () => {
+  it('builds messages from conversation, context, and a question', () => {
     const chunks: RetrievedChunk[] = [
       { chunk: 'JWTs are signed tokens.', similarity: 0.95, documentId: '1' },
       { chunk: 'They may contain claims.', similarity: 0.9, documentId: '1' },
     ];
 
-    const prompt = service.buildPrompt('What is a JWT?', chunks, [
+    const messages = service.buildMessages('What is a JWT?', chunks, [
       { role: MessageRole.USER, content: 'Tell me about authentication.' },
       {
         role: MessageRole.ASSISTANT,
@@ -32,31 +32,25 @@ describe('PromptBuilderService', () => {
       },
     ]);
 
-    expect(prompt).toBe(
-      [
-        'Previous Conversation:',
-        'User:\nTell me about authentication.\n\nAssistant:\nAuthentication verifies identity.',
-        'Context:',
-        'JWTs are signed tokens.\n\nThey may contain claims.',
-        'Question:',
-        'What is a JWT?',
-        'Answer only from context.',
-      ].join('\n\n'),
-    );
+    expect(messages).toHaveLength(4);
+    expect(messages[0].role).toBe('system');
+    expect(messages[0].content).toContain('JWTs are signed tokens.');
+    expect(messages[0].content).toContain('They may contain claims.');
+    expect(messages[1].role).toBe('user');
+    expect(messages[1].content).toBe('Tell me about authentication.');
+    expect(messages[2].role).toBe('assistant');
+    expect(messages[2].content).toBe('Authentication verifies identity.');
+    expect(messages[3].role).toBe('user');
+    expect(messages[3].content).toContain('What is a JWT?');
   });
 
   it('keeps empty conversation and context sections', () => {
-    expect(service.buildPrompt('What is a JWT?', [], [])).toBe(
-      [
-        'Previous Conversation:',
-        '',
-        'Context:',
-        '',
-        'Question:',
-        'What is a JWT?',
-        'Answer only from context.',
-      ].join('\n\n'),
-    );
+    const messages = service.buildMessages('What is a JWT?', [], []);
+    expect(messages).toHaveLength(2);
+    expect(messages[0].role).toBe('system');
+    expect(messages[0].content).toContain('No context provided.');
+    expect(messages[1].role).toBe('user');
+    expect(messages[1].content).toContain('What is a JWT?');
   });
 
   it('limits prompt memory and context to five items', () => {
@@ -65,16 +59,18 @@ describe('PromptBuilderService', () => {
       similarity: 1,
       documentId: '1',
     }));
-    const messages = Array.from({ length: 6 }, (_, index) => ({
+    const prevMessages = Array.from({ length: 6 }, (_, index) => ({
       role: MessageRole.USER,
       content: `message-${index}`,
     }));
 
-    const prompt = service.buildPrompt('question', chunks, messages);
+    const messages = service.buildMessages('question', chunks, prevMessages);
 
-    expect(prompt).not.toContain('message-0');
-    expect(prompt).toContain('message-5');
-    expect(prompt).toContain('chunk-0');
-    expect(prompt).not.toContain('chunk-5');
+    expect(messages[0].content).toContain('chunk-0');
+    expect(messages[0].content).not.toContain('chunk-5');
+
+    expect(messages).toHaveLength(7);
+    expect(messages.some((m) => m.content === 'message-0')).toBe(false);
+    expect(messages.some((m) => m.content === 'message-5')).toBe(true);
   });
 });

@@ -15,8 +15,8 @@ import { Model } from 'mongoose';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { PDFParse } from 'pdf-parse';
-import { ChromaClient } from 'chromadb';
 import { EmbeddingsService } from '../embeddings/embeddings.service';
+import { VectorDbService } from '../vector-db/vector-db.service';
 
 export interface ProcessJobData {
   documentId: string;
@@ -25,16 +25,13 @@ export interface ProcessJobData {
 
 @Processor('document-processing')
 export class DocumentsProcessor {
-  private readonly chromaClient = new ChromaClient({
-    path: process.env.CHROMA_URL || 'http://localhost:8000',
-  });
-
   constructor(
     @InjectModel(UploadedDoc.name)
     private readonly uploadedDocModel: Model<UploadedDocDocument>,
     @InjectModel(DocumentChunk.name)
     private readonly documentChunkModel: Model<DocumentChunkDocument>,
     private readonly embeddingsService: EmbeddingsService,
+    private readonly vectorDbService: VectorDbService,
     @Inject('PUB_SUB') private readonly pubSub: PubSub,
   ) {}
 
@@ -51,7 +48,7 @@ export class DocumentsProcessor {
 
     doc.status = 'PROCESSING';
     await doc.save();
-    this.pubSub.publish('documentStatusUpdated', {
+    void this.pubSub.publish('documentStatusUpdated', {
       documentStatusUpdated: doc,
     });
 
@@ -84,22 +81,14 @@ export class DocumentsProcessor {
       const chunksCount = chunks.length;
 
       if (chunksCount > 0) {
-        // Ensure collection exists
-        const collectionName = 'documents';
-        const collection = await this.chromaClient.getOrCreateCollection({
-          name: collectionName,
-          embeddingFunction: null,
-        });
-
         // Delete existing chunks if reprocessing
-        await collection.delete({
-          where: {
-            documentId,
-          },
-        });
+        await this.vectorDbService.deleteByDocumentId(
+          documentId,
+          doc.chunksCount,
+        );
         await this.documentChunkModel.deleteMany({ documentId });
 
-        // Generate embeddings and store in ChromaDB
+        // Generate embeddings
         const ids = chunks.map((_, i) => `${documentId}-chunk-${i}`);
         const metadatas = chunks.map((_, i) => ({
           documentId,
@@ -111,13 +100,13 @@ export class DocumentsProcessor {
         const embeddings =
           await this.embeddingsService.generateEmbeddings(chunks);
 
-        // Upsert into chromadb
-        await collection.upsert({
-          ids,
+        // Upsert into vector db
+        await this.vectorDbService.upsertChunks(
+          documentId,
+          chunks,
           embeddings,
           metadatas,
-          documents: chunks,
-        });
+        );
 
         // Save chunks to MongoDB
         const documentChunks = chunks.map((content, i) => ({
@@ -134,7 +123,7 @@ export class DocumentsProcessor {
       doc.pages = pagesCount;
       doc.chunksCount = chunksCount;
       await doc.save();
-      this.pubSub.publish('documentStatusUpdated', {
+      void this.pubSub.publish('documentStatusUpdated', {
         documentStatusUpdated: doc,
       });
 
@@ -145,7 +134,7 @@ export class DocumentsProcessor {
       doc.errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       await doc.save();
-      this.pubSub.publish('documentStatusUpdated', {
+      void this.pubSub.publish('documentStatusUpdated', {
         documentStatusUpdated: doc,
       });
       throw error;

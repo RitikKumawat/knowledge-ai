@@ -11,7 +11,13 @@ export const FButton: React.FC<FButtonProps> = ({ variant = 'primary', className
   
   return (
     <Button className={`${btnClass} ${className || ''}`} unstyled {...props}>
-      {children}
+      {variant === 'social' ? (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {children}
+        </span>
+      ) : (
+        children
+      )}
     </Button>
   );
 };

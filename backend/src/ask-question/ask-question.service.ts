@@ -60,7 +60,7 @@ export class AskQuestionService {
     );
 
     // Process stream in the background
-    (async () => {
+    void (async () => {
       try {
         const stream = this.ollamaService.generateAnswerStream(messages);
         let fullAnswer = '';
