@@ -3,7 +3,7 @@ import ollama, { Message } from 'ollama';
 
 @Injectable()
 export class OllamaService {
-  private static readonly MODEL = 'qwen3-coder:30b';
+  private static readonly MODEL = 'qwen2.5-coder:14b';
   async generateAnswer(messages: Message[]): Promise<string> {
     const result = await ollama.chat({
       model: OllamaService.MODEL,
