@@ -21,6 +21,7 @@ import { PromptBuilderModule } from './prompt-builder/prompt-builder.module';
 import { OllamaModule } from './ollama/ollama.module';
 import { AskQuestionModule } from './ask-question/ask-question.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { VectorDbModule } from './vector-db/vector-db.module';
 
 import { PubSubModule } from './common/pubsub/pubsub.module';
 import { Request, Response } from 'express';
@@ -84,12 +85,24 @@ import { Request, Response } from 'express';
     }),
     PubSubModule,
     BullModule.forRoot({
-      redis: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
-      },
+      ...(process.env.NODE_ENV === 'production' && process.env.UPSTASH_REDIS_TCP
+        ? {
+            url: process.env.UPSTASH_REDIS_TCP,
+            redis: {
+              tls: {
+                rejectUnauthorized: false,
+              },
+            },
+          }
+        : {
+            redis: {
+              host: process.env.REDIS_HOST || 'localhost',
+              port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
+            },
+          }),
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL as string),
+    VectorDbModule,
     DocumentsModule,
     ChatModule,
     EmbeddingsModule,

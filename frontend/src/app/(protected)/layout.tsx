@@ -2,27 +2,28 @@
 
 import React from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { GetUserProfileDocument, UserLogoutDocument, GetChatSessionsDocument, GetDocumentsDocument } from "@/generated/graphql";
+import {
+  GetUserProfileDocument,
+  UserLogoutDocument,
+  GetChatSessionsDocument,
+  GetDocumentsDocument,
+} from "@/generated/graphql";
 import {
   AppShell,
   Button,
   Center,
   Loader,
-  TextInput,
   Avatar,
   UnstyledButton,
-  ActionIcon,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   Plus,
-  Search,
   MessageSquare,
   FileText,
   LayoutDashboard,
   Settings,
   LogOut,
-  Eye
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,13 +37,14 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }>) {
   const [opened] = useDisclosure();
-  const [newChatOpened, { open: openNewChat, close: closeNewChat }] = useDisclosure(false);
+  const [newChatOpened, { open: openNewChat, close: closeNewChat }] =
+    useDisclosure(false);
   const pathname = usePathname();
 
   const { data, loading, error } = useQuery(GetUserProfileDocument, {
     fetchPolicy: "network-only",
   });
-  
+
   const { data: chatData } = useQuery(GetChatSessionsDocument, {
     variables: { pagination: { limit: 20, page: 1 } },
   });
@@ -51,16 +53,19 @@ export default function ProtectedLayout({
     variables: { pagination: { limit: 10, page: 1 } },
   });
 
-  const [logoutUser, { loading: loadingLogout }] = useMutation(UserLogoutDocument, {
-    onCompleted: () => {
-      notifications.show({
-        message: "User Logged out successfully",
-        title: "Success",
-        color: "green"
-      });
+  const [logoutUser, { loading: loadingLogout }] = useMutation(
+    UserLogoutDocument,
+    {
+      onCompleted: () => {
+        notifications.show({
+          message: "User Logged out successfully",
+          title: "Success",
+          color: "green",
+        });
+      },
+      refetchQueries: [GetUserProfileDocument],
     },
-    refetchQueries: [GetUserProfileDocument]
-  });
+  );
 
   if (loading) {
     return (
@@ -125,7 +130,12 @@ export default function ProtectedLayout({
           <div className={styles.scrollSection}>
             <div className={styles.sectionTitle}>Recent Chats</div>
             {chatData?.chatSessions.items.map((chat) => (
-              <Link href={`/chat/${chat._id}`} passHref key={chat._id} style={{ textDecoration: 'none' }}>
+              <Link
+                href={`/chat/${chat._id}`}
+                passHref
+                key={chat._id}
+                style={{ textDecoration: "none" }}
+              >
                 <UnstyledButton
                   w={"100%"}
                   className={`${styles.navItem} ${pathname === `/chat/${chat._id}` ? styles.active : ""}`}
@@ -133,17 +143,24 @@ export default function ProtectedLayout({
                   <div className={styles.itemIcon}>
                     <MessageSquare size={16} />
                   </div>
-                  <span className={styles.itemText}>{chat.title || "New Chat"}</span>
+                  <span className={styles.itemText}>
+                    {chat.title || "New Chat"}
+                  </span>
                 </UnstyledButton>
               </Link>
             ))}
 
             <div className={styles.sectionTitle}>Documents</div>
             {docsData?.documents.items.map((doc) => (
-              <Link href="/documents" passHref key={doc._id} style={{ textDecoration: 'none' }}>
+              <Link
+                href="/documents"
+                passHref
+                key={doc._id}
+                style={{ textDecoration: "none" }}
+              >
                 <UnstyledButton
                   w="100%"
-                  className={`${styles.navItem} ${pathname === '/documents' ? styles.active : ''}`}
+                  className={`${styles.navItem} ${pathname === "/documents" ? styles.active : ""}`}
                 >
                   <div className={styles.itemIcon}>
                     <FileText size={16} />
@@ -154,7 +171,7 @@ export default function ProtectedLayout({
             ))}
 
             <div className={styles.sectionTitle}>Dashboard</div>
-            <Link href="/dashboard" passHref style={{ textDecoration: 'none' }}>
+            <Link href="/dashboard" passHref style={{ textDecoration: "none" }}>
               <UnstyledButton
                 w={"100%"}
                 className={`${styles.navItem} ${
