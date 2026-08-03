@@ -17,6 +17,7 @@
     "@mantine/form": "^9.4.1",
     "@mantine/hooks": "^9.4.1",
     "@mantine/notifications": "^9.4.1",
+    "@react-oauth/google": "^0.13.5",
     "apollo-upload-client": "^19.0.0",
     "graphql": "^16.14.2",
     "graphql-ws": "^6.1.0",

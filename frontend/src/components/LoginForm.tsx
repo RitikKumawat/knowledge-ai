@@ -1,5 +1,5 @@
 import React from "react";
-import { FcGoogle } from "react-icons/fc";
+import { GoogleLogin } from "@react-oauth/google";
 import { useForm } from "@mantine/form";
 import { yupResolver } from "mantine-form-yup-resolver";
 import { loginSchema } from "../form/validations/loginSchema";
@@ -7,7 +7,7 @@ import { loginInitialValues } from "../form/initial-values/loginValues";
 import styles from "./AuthForms.module.scss";
 import { FInput, FButton, FTypography } from "../ui";
 import { useMutation } from "@apollo/client/react";
-import { UserLoginDocument } from "@/generated/graphql";
+import { UserLoginDocument, UserGoogleAuthDocument } from "@/generated/graphql";
 import { notifications } from "@mantine/notifications";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +29,24 @@ export default function LoginForm({
       notifications.show({
         title: "Success",
         message: "Successfully logged in",
+        color: "green",
+      });
+      router.push("/dashboard");
+    },
+  });
+
+  const [googleAuth, { loading: googleLoading }] = useMutation(UserGoogleAuthDocument, {
+    onError: (err) => {
+      notifications.show({
+        title: "Error",
+        message: err.message,
+        color: "red",
+      });
+    },
+    onCompleted: () => {
+      notifications.show({
+        title: "Success",
+        message: "Successfully logged in with Google",
         color: "green",
       });
       router.push("/dashboard");
@@ -93,11 +111,17 @@ export default function LoginForm({
           <span>or continue with</span>
         </div>
 
-        <div className={styles.socialRow}>
-          <FButton type="button" variant="social">
-            <FcGoogle size={20} />
-            Continue with Google
-          </FButton>
+        <div className={styles.socialRow} style={{ display: 'flex', justifyContent: 'center' }}>
+          <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              if (credentialResponse.credential) {
+                googleAuth({ variables: { credential: credentialResponse.credential } });
+              }
+            }}
+            onError={() => {
+              notifications.show({ title: "Error", message: "Google Login Failed", color: "red" });
+            }}
+          />
         </div>
       </form>
 

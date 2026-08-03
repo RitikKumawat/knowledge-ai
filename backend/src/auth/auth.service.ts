@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import { UserLoginInput, UserSignupInput } from './dto/create-auth.input';
 import { UserService } from '../user/user.service';
 import { UserDocument } from '../schemas/users.schema';
@@ -45,6 +46,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (!user.password) {
+      throw new UnauthorizedException(
+        'This account is linked to Google. Please use the Google sign-in option.',
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(input.password, user.password);
 
     if (!isPasswordValid) {
@@ -75,6 +82,59 @@ export class AuthService {
     this.cookieService.setRefreshToken(res, refreshToken);
 
     return 'User logged in successfully!';
+  }
+
+  async userGoogleAuth(
+    credential: string,
+    req: AuthenticatedRequest,
+    res: Response,
+  ): Promise<string> {
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payloadInfo = ticket.getPayload();
+
+    if (!payloadInfo?.email) {
+      throw new UnauthorizedException('Invalid Google credential');
+    }
+
+    const email = payloadInfo.email;
+    const name = payloadInfo.name || 'Google User';
+
+    let user = await this.userService.findByEmail(email);
+
+    user ??= await this.userService.createUser({
+      email,
+      name,
+      authProvider: 'google',
+    });
+
+    const sessionId = new Types.ObjectId();
+
+    const payload = {
+      sub: user._id.toString(),
+      sessionId: sessionId.toString(),
+    };
+
+    const accessToken = await this.tokenService.generateAccessToken(payload);
+    const refreshToken = await this.tokenService.generateRefreshToken(payload);
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+
+    await this.userSessionService.createSession({
+      _id: sessionId,
+      userId: user._id,
+      refreshTokenHash,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    this.cookieService.setAccessToken(res, accessToken);
+    this.cookieService.setRefreshToken(res, refreshToken);
+
+    return 'User logged in successfully with Google!';
   }
 
   async userLogout(req: AuthenticatedRequest, res: Response): Promise<string> {

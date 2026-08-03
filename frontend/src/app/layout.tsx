@@ -7,6 +7,7 @@ import { ApolloWrapper } from "./ApolloWrapper";
 import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { theme } from "../theme/theme";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,9 @@ export default function RootLayout({
       <body>
         <MantineProvider theme={theme}>
           <Notifications position="top-right"/>
-          <ApolloWrapper>{children}</ApolloWrapper>
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+            <ApolloWrapper>{children}</ApolloWrapper>
+          </GoogleOAuthProvider>
         </MantineProvider>
       </body>
     </html>
