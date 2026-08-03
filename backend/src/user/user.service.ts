@@ -16,7 +16,7 @@ export class UserService {
   async findById(id: Types.ObjectId): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
   }
-  async createUser(userData: Partial<User>): Promise<User> {
+  async createUser(userData: Partial<User>): Promise<UserDocument> {
     const newUser = new this.userModel(userData);
     return newUser.save();
   }

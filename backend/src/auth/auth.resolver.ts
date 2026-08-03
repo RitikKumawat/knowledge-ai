@@ -28,6 +28,19 @@ export class AuthResolver {
     return this.authService.userLogin(input, context.req, context.res);
   }
 
+  @Roles(ROLE.PUBLIC)
+  @Mutation(() => String)
+  async userGoogleAuth(
+    @Args('credential') credential: string,
+    @Context() context: GraphqlContext,
+  ): Promise<string> {
+    return this.authService.userGoogleAuth(
+      credential,
+      context.req,
+      context.res,
+    );
+  }
+
   @Roles(ROLE.USER)
   @Mutation(() => String)
   async userLogout(@Context() context: GraphqlContext): Promise<string> {

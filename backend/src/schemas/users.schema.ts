@@ -30,9 +30,16 @@ export class User {
   email!: string;
 
   @Prop({
-    required: true,
+    required: false,
   })
-  password!: string;
+  password?: string;
+
+  @Field(() => String, { nullable: true })
+  @Prop({
+    required: false,
+    default: 'local',
+  })
+  authProvider?: string;
 
   @Field()
   createdAt!: Date;
