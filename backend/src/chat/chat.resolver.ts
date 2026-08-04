@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { ChatService } from './chat.service';
 import { ChatSession } from '../schemas/chatSessions.schema';
 import { CreateChatInput } from './dto/create-chat.input';
+import { UpdateChatInput } from './dto/update-chat.input';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ROLE } from '../auth/constants/role.enum';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -21,6 +22,14 @@ export class ChatResolver {
     @CurrentUser() user: UserDocument,
   ): Promise<ChatSession> {
     return this.chatService.createChat(user, input);
+  }
+
+  @Mutation(() => ChatSession)
+  async updateChat(
+    @Args('input') input: UpdateChatInput,
+    @CurrentUser() user: UserDocument,
+  ): Promise<ChatSession> {
+    return this.chatService.updateChat(user, input);
   }
 
   @Query(() => PaginatedChatSessions)

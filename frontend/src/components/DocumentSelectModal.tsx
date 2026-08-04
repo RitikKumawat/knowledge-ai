@@ -1,47 +1,40 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  Button,
-  TextInput,
-  Checkbox,
-  Stack,
-  Text,
-  Group,
-  ScrollArea,
-  Loader,
-  Center,
-} from "@mantine/core";
+import React, { useEffect, useState } from "react";
+import { Modal, Button, Checkbox, Stack, Text, Group, ScrollArea, Loader, Center } from "@mantine/core";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { GetDocumentsDocument, CreateChatDocument, GetChatSessionsDocument } from "@/generated/graphql";
-import { useRouter } from "next/navigation";
+import { GetDocumentsDocument, UpdateChatDocument, GetChatSessionDocument } from "@/generated/graphql";
 import { notifications } from "@mantine/notifications";
 
-interface NewChatModalProps {
+interface DocumentSelectModalProps {
   opened: boolean;
   onClose: () => void;
+  chatId: string;
+  currentDocumentIds: string[];
 }
 
-export function NewChatModal({ opened, onClose }: NewChatModalProps) {
-  const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
+export function DocumentSelectModal({ opened, onClose, chatId, currentDocumentIds }: DocumentSelectModalProps) {
+  const [selectedDocs, setSelectedDocs] = useState<string[]>(currentDocumentIds || []);
+  const [prevOpened, setPrevOpened] = useState(opened);
+
+  if (opened !== prevOpened) {
+    setPrevOpened(opened);
+    if (opened) {
+      setSelectedDocs(currentDocumentIds || []);
+    }
+  }
 
   const { data, loading } = useQuery(GetDocumentsDocument, {
     variables: { pagination: { page: 1, limit: 50 } },
     skip: !opened,
   });
 
-  const [createChat, { loading: creating }] = useMutation(CreateChatDocument, {
-    onCompleted: (data) => {
+  const [updateChat, { loading: updating }] = useMutation(UpdateChatDocument, {
+    onCompleted: () => {
       notifications.show({
         title: "Success",
-        message: "Chat created successfully",
+        message: "Document context updated successfully",
         color: "green",
       });
       onClose();
-      router.push(`/chat/${data.createChat._id}`);
-      setTitle("");
-      setSelectedDocs([]);
     },
     onError: (err) => {
       notifications.show({
@@ -50,14 +43,14 @@ export function NewChatModal({ opened, onClose }: NewChatModalProps) {
         color: "red",
       });
     },
-    refetchQueries: [GetChatSessionsDocument],
+    refetchQueries: [{ query: GetChatSessionDocument, variables: { id: chatId } }],
   });
 
-  const handleCreate = () => {
-    createChat({
+  const handleUpdate = () => {
+    updateChat({
       variables: {
         input: {
-          title: title.trim() || undefined,
+          chatId,
           documentIds: selectedDocs,
         },
       },
@@ -71,18 +64,11 @@ export function NewChatModal({ opened, onClose }: NewChatModalProps) {
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Start New Chat" centered>
+    <Modal opened={opened} onClose={onClose} title="Update Chat Context" centered>
       <Stack>
-        <TextInput
-          label="Chat Title (Optional)"
-          placeholder="New Chat"
-          value={title}
-          onChange={(e) => setTitle(e.currentTarget.value)}
-        />
-
         <div>
           <Text size="sm" fw={500} mb={8}>
-            Select Document Context
+            Select Documents for this Chat
           </Text>
           <ScrollArea h={200} type="always" offsetScrollbars style={{ border: "1px solid var(--mantine-color-gray-3)", borderRadius: "var(--mantine-radius-sm)", padding: "10px" }}>
             {loading ? (
@@ -90,14 +76,9 @@ export function NewChatModal({ opened, onClose }: NewChatModalProps) {
                 <Loader size="sm" />
               </Center>
             ) : data?.documents.items.length === 0 ? (
-              <Stack align="center" gap="xs" py="md">
-                <Text c="dimmed" size="sm" ta="center">
-                  No documents found
-                </Text>
-                <Button variant="light" size="xs" onClick={() => { onClose(); router.push('/documents'); }}>
-                  Upload Document
-                </Button>
-              </Stack>
+              <Text c="dimmed" size="sm" ta="center" py="md">
+                No documents found. Please upload documents from the sidebar.
+              </Text>
             ) : (
               <Stack gap="xs">
                 {data?.documents.items.map((doc) => (
@@ -108,9 +89,6 @@ export function NewChatModal({ opened, onClose }: NewChatModalProps) {
                     onChange={() => handleToggleDoc(doc._id)}
                   />
                 ))}
-                <Button variant="light" size="xs" mt="sm" onClick={() => { onClose(); router.push('/documents'); }}>
-                  Upload New Document
-                </Button>
               </Stack>
             )}
           </ScrollArea>
@@ -120,8 +98,8 @@ export function NewChatModal({ opened, onClose }: NewChatModalProps) {
           <Button variant="default" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleCreate} loading={creating} color="indigo" disabled={selectedDocs.length === 0}>
-            Start Chat
+          <Button onClick={handleUpdate} loading={updating} color="indigo" disabled={selectedDocs.length === 0}>
+            Save
           </Button>
         </Group>
       </Stack>

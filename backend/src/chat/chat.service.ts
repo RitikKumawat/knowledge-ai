@@ -15,6 +15,7 @@ import {
   UploadedDocDocument,
 } from '../schemas/uploadedDoc.schema';
 import { CreateChatInput } from './dto/create-chat.input';
+import { UpdateChatInput } from './dto/update-chat.input';
 import { UserDocument } from '../schemas/users.schema';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginationInput } from '../common/pagination/dto/pagination.input';
@@ -95,6 +96,39 @@ export class ChatService {
     }
 
     return chat;
+  }
+
+  async updateChat(
+    user: UserDocument,
+    input: UpdateChatInput,
+  ): Promise<ChatSessionDocument> {
+    const chat = await this.getChatDetails(
+      new Types.ObjectId(input.chatId),
+      user,
+    );
+
+    if (input.documentIds) {
+      const documentObjectIds = input.documentIds.map(
+        (id) => new Types.ObjectId(id),
+      );
+
+      if (documentObjectIds.length > 0) {
+        const docs = await this.uploadedDocModel.find({
+          _id: { $in: documentObjectIds },
+          uploadedBy: user._id,
+        });
+
+        if (docs.length !== documentObjectIds.length) {
+          throw new ForbiddenException(
+            'One or more documents do not exist or you do not have permission to access them',
+          );
+        }
+      }
+
+      chat.documentIds = documentObjectIds;
+    }
+
+    return chat.save();
   }
 
   async deleteChat(id: Types.ObjectId, user: UserDocument): Promise<boolean> {
