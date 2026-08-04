@@ -42,6 +42,14 @@ mutation DeleteChat($id: ID!) {
   deleteChat(id: $id)
 }
 
+mutation UpdateChat($input: UpdateChatInput!) {
+  updateChat(input: $input) {
+    _id
+    title
+    documentIds
+  }
+}
+
 mutation AskQuestion($input: AskQuestionInput!) {
   askQuestion(input: $input) {
     answer

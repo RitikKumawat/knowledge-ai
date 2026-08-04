@@ -68,7 +68,7 @@ export function UploadModal({ opened, onClose, onSuccess }: UploadModalProps) {
         ref={fileInputRef}
         style={{ display: "none" }}
         onChange={handleFileChange}
-        accept=".pdf,.doc,.docx,.txt"
+        accept=".pdf,application/pdf"
       />
       <div
         className={`${classes.uploadArea} ${file ? classes.hasFile : ""}`}
@@ -89,7 +89,7 @@ export function UploadModal({ opened, onClose, onSuccess }: UploadModalProps) {
               Click to upload or drag and drop
             </Text>
             <Text className={classes.uploadSubtext}>
-              PDF, DOCX, TXT up to 10MB
+              PDF up to 10MB
             </Text>
           </>
         )}

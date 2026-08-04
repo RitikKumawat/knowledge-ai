@@ -15,6 +15,9 @@ import {
   Loader,
   Avatar,
   UnstyledButton,
+  Group,
+  ActionIcon,
+  Tooltip,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -150,7 +153,16 @@ export default function ProtectedLayout({
               </Link>
             ))}
 
-            <div className={styles.sectionTitle}>Documents</div>
+            <Group justify="space-between" align="center" className={styles.sectionTitleGroup} mb={4} mt={16}>
+              <div className={styles.sectionTitle} style={{ margin: 0 }}>Documents</div>
+              <Tooltip label="Upload Document" position="right" withArrow>
+                <Link href="/documents" passHref>
+                  <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Upload Document">
+                    <Plus size={14} />
+                  </ActionIcon>
+                </Link>
+              </Tooltip>
+            </Group>
             {docsData?.documents.items.map((doc) => (
               <Link
                 href="/documents"
