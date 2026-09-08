@@ -2,6 +2,10 @@ pipeline {
 
     agent any
 
+    tools{
+        nodejs 'node22'
+    }
+
     environment {
         DOCKER_IMAGE = "ritikkumawat123/knowledge-ai-frontend"
     }
