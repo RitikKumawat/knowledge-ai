@@ -52,6 +52,7 @@ pipeline {
                 // Change into the helm chart directory
                 dir('frontend/helm/knowledge-ai-frontend') {
                     sh """
+                        export KUBECONFIG=\$PWD/../../jenkins-kubeconfig.yaml
                         # We use the downloaded helm binary
                         ../../../helm upgrade --install nextjs-canary . \\
                             -n nextjs-canary \\
@@ -64,6 +65,7 @@ pipeline {
         stage('Trigger Argo Rollout') {
             steps {
                 sh """
+                    export KUBECONFIG=\$PWD/frontend/jenkins-kubeconfig.yaml
                     echo "Checking rollout status..."
                     ./kubectl-argo-rollouts get rollout nextjs-canary-knowledge-ai-frontend -n nextjs-canary
                     
