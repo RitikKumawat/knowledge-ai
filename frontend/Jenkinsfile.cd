@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', description: 'The Docker image tag to deploy (e.g. 1.0.1)')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Deploy with Helm') {
+            steps {
+                // Change into the helm chart directory
+                dir('frontend/helm/knowledge-ai-frontend') {
+                    sh """
+                        # We use the IMAGE_TAG parameter to override the image.tag in values.yaml
+                        helm upgrade --install nextjs-canary . \\
+                            -n nextjs-canary \\
+                            --set image.tag=${params.IMAGE_TAG}
+                    """
+                }
+            }
+        }
+
+        stage('Trigger Argo Rollout') {
+            steps {
+                sh """
+                    echo "Checking rollout status..."
+                    kubectl argo rollouts get rollout nextjs-canary-knowledge-ai-frontend -n nextjs-canary
+                    
+                    echo "Deployment to Kubernetes triggered via Argo Rollouts."
+                    echo "If this is a new image version, the rollout should be paused at the first canary step."
+                    echo "Please visit the Argo Rollouts Dashboard to promote it!"
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CD Pipeline completed! Check Argo Rollouts Dashboard for the deployment progress of tag ${params.IMAGE_TAG}."
+        }
+        failure {
+            echo "CD Pipeline failed!"
+        }
+    }
+}
