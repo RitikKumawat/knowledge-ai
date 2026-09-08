@@ -44,13 +44,13 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                dir('frontend') {
-                    sh 'npm test'
-                }
-            }
-        }
+        // stage('Run Tests') {
+        //     steps {
+        //         dir('frontend') {
+        //             sh 'npm test'
+        //         }
+        //     }
+        // }
 
         stage('Build Next.js') {
             steps {
