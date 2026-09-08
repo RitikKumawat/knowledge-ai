@@ -2,7 +2,7 @@ pipeline {
 
     agent any
 
-    tools{
+    tools {
         nodejs 'node22'
     }
 
@@ -18,32 +18,58 @@ pipeline {
             }
         }
 
+        stage('Check Environment') {
+            steps {
+                sh '''
+                    echo "Node version:"
+                    node --version
+
+                    echo "NPM version:"
+                    npm --version
+
+                    echo "Current directory:"
+                    pwd
+
+                    echo "Frontend files:"
+                    ls -la frontend
+                '''
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('frontend') {
+                    sh 'npm ci'
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'npm test'
+                dir('frontend') {
+                    sh 'npm test'
+                }
             }
         }
 
         stage('Build Next.js') {
             steps {
-                sh 'npm run build'
+                dir('frontend') {
+                    sh 'npm run build'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                    docker build \
-                        -t ${DOCKER_IMAGE}:${BUILD_NUMBER} \
-                        -t ${DOCKER_IMAGE}:latest \
-                        .
-                """
+                dir('frontend') {
+                    sh """
+                        docker build \
+                            -t ${DOCKER_IMAGE}:${BUILD_NUMBER} \
+                            -t ${DOCKER_IMAGE}:latest \
+                            .
+                    """
+                }
             }
         }
 
