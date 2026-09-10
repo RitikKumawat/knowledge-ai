@@ -32,7 +32,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./ProtectedLayout.module.scss";
 import { notifications } from "@mantine/notifications";
-import { NewChatModal } from "@/components/NewChatModal";
+import { NewChatModal } from "@/components/chat/NewChatModal";
 
 export default function ProtectedLayout({
   children,
