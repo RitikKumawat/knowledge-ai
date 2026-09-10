@@ -16,7 +16,14 @@ def pipelineApps = [
 echo "DEBUG - Build Causes: ${currentBuild.buildCauses.toString()}"
 echo "DEBUG - PR Comment Body: ${env.GITHUB_PR_COMMENT_BODY}"
 // Updated Condition: Check if the comment body contains DEPLOY
-def isCdTrigger = env.CHANGE_ID && env.GITHUB_PR_COMMENT_BODY && env.GITHUB_PR_COMMENT_BODY.contains("DEPLOY")
+// Read the causes into a string
+def causesString = currentBuild.buildCauses.toString()
+
+echo "DEBUG - Build Causes: ${causesString}"
+
+// Check if it's a PR, and if the cause string contains the exact comment body we want
+def isCdTrigger = env.CHANGE_ID && causesString.contains('"commentBody":"DEPLOY"')
+
 if (isCdTrigger) {
     echo "✅ CD Trigger Detected! Running CD Pipeline..."
     cdPipeline(
@@ -30,3 +37,4 @@ if (isCdTrigger) {
         apps: pipelineApps
     )
 }
+
