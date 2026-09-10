@@ -9,6 +9,7 @@ def pipelineApps = [
         nextJs: [
             path: "frontend",
             node_version: "24"
+            namespace:"rag-project"
         ]
     ]
 ]
