@@ -14,7 +14,6 @@ strategy:
       plugins:
         argoproj-labs/gatewayAPI:
           httpRoute: nextjs
-          namespace: nextjs-canary
     steps:
       - setWeight: 10
       - pause: {}
