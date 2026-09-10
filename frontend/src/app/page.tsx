@@ -23,7 +23,7 @@ export default function Home() {
             AI-Powered Document Intelligence
           </div>
 
-          <h1>Chat with your documents using AI.</h1>
+          <h1>UPDATE CHECK DEPLOYMENT </h1>
 
           <p>
             Upload PDFs, create knowledge workspaces, and get trustworthy
