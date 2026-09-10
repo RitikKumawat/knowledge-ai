@@ -6,7 +6,7 @@ def pipelineConfig = [
 
 def pipelineApps = [
     [
-        reactJs: [
+        nextJs: [
             path: "frontend",
             node_version: "24"
         ]
