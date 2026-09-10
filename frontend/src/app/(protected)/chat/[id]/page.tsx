@@ -13,7 +13,7 @@ import { Loader, Center, ActionIcon, Text, Textarea, Box, Title, Paper, Group, B
 import { Send, Plus, Sparkles } from "lucide-react";
 import styles from "./Chat.module.scss";
 import { useDisclosure } from "@mantine/hooks";
-import { DocumentSelectModal } from "@/components/DocumentSelectModal";
+import { DocumentSelectModal } from "@/components/documents/DocumentSelectModal";
 import { notifications } from "@mantine/notifications";
 
 export default function ChatPage() {

@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import styles from "./page.module.css";
-import LoginForm from "../components/LoginForm";
-import SignupForm from "../components/SignupForm";
+import LoginForm from "@/components/auth/LoginForm";
+import SignupForm from "@/components/auth/SignupForm";
+
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
@@ -14,7 +15,7 @@ export default function Home() {
       <section className={styles.authBrand}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}></div>
-          <div className={styles.logoText}>KnowledgeAI</div>
+          <div className={styles.logoText}>KnowledgeAI NEW UPDATES</div>
         </div>
 
         <div className={styles.hero}>

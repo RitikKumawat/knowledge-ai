@@ -1,0 +1,40 @@
+@Library('jenkins-infra') _
+
+def pipelineConfig = [
+    domainWith: "subdomain"
+]
+
+def pipelineApps = [
+    [
+        reactJs: [
+            path: "frontend",
+            node_version: "24"
+        ]
+    ]
+]
+
+echo "DEBUG - Build Causes: ${currentBuild.buildCauses.toString()}"
+echo "DEBUG - PR Comment Body: ${env.GITHUB_PR_COMMENT_BODY}"
+// Updated Condition: Check if the comment body contains DEPLOY
+// Read the causes into a string
+def causesString = currentBuild.buildCauses.toString()
+
+echo "DEBUG - Build Causes: ${causesString}"
+
+// Check if it's a PR, and if the cause string contains the exact comment body we want
+def isCdTrigger = env.CHANGE_ID && causesString.contains('"commentBody":"DEPLOY"')
+
+if (isCdTrigger) {
+    echo "✅ CD Trigger Detected! Running CD Pipeline..."
+    cdPipeline(
+        config: pipelineConfig,
+        apps: pipelineApps
+    )
+} else {
+    echo "🚀 Standard Trigger Detected. Running CI Pipeline..."
+    multipleFolderBuild(
+        config: pipelineConfig,
+        apps: pipelineApps
+    )
+}
+
