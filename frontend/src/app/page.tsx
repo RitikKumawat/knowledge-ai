@@ -15,7 +15,7 @@ export default function Home() {
       <section className={styles.authBrand}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}></div>
-          <div className={styles.logoText}>KnowledgeAI V2 UPGRADED</div>
+          <div className={styles.logoText}>KnowledgeAI NEW UPDATES</div>
         </div>
 
         <div className={styles.hero}>
