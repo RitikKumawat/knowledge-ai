@@ -1,0 +1,16 @@
+@Library('jenkins-infra') _
+
+ciCdPipeline(
+    config: [
+        domainWith: "subdomain"
+    ],
+    apps: [
+        [
+            nextJs: [
+                path: "frontend",
+                node_version: "24",
+                namespace: "rag-project"
+            ]
+        ]
+    ]
+)
