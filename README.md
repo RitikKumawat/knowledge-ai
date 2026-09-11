@@ -1,1 +1,1 @@
-# knowledge-ai.
+# knowledge-ai
