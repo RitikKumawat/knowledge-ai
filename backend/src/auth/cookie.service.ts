@@ -26,8 +26,14 @@ export class CookieService {
   }
 
   clearAuthCookies(res: Response) {
-    res.clearCookie(ACCESS_TOKEN_COOKIE);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
+    };
 
-    res.clearCookie(REFRESH_TOKEN_COOKIE);
+    res.clearCookie(ACCESS_TOKEN_COOKIE, cookieOptions);
+    res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions);
   }
 }

@@ -58,7 +58,7 @@ export class DocumentsService {
       maxSizeInBytes: 5 * 1024 * 1024, // 5 MB
     });
 
-    const fileUrl = generateFileUrl(req, file, '');
+    const fileUrl = await generateFileUrl(req, file, '');
     const newDoc = await this.uploadedDocModel.create({
       filename: file.filename,
       fileUrl: fileUrl,

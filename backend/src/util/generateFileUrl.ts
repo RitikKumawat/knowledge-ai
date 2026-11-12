@@ -3,12 +3,12 @@ import { join } from 'node:path';
 import { existsSync, mkdirSync, createWriteStream } from 'node:fs';
 import { FileUpload } from 'graphql-upload-ts';
 
-export function generateFileUrl(
+export async function generateFileUrl(
   req: Request,
   file: FileUpload,
   directoryName: string,
   replaceExisting: boolean = false,
-): string {
+): Promise<string> {
   if (!file) {
     throw new Error('No file provided');
   }
@@ -17,21 +17,32 @@ export function generateFileUrl(
   const newFilename = replaceExisting
     ? file.filename
     : `${currentDate}_${file.filename}`;
-  const dirPath = join(`./uploads/${directoryName}`);
+  const cleanDir = directoryName.replace(/^\/+|\/+$/g, '');
+  const dirPath = cleanDir
+    ? join(process.cwd(), 'uploads', cleanDir)
+    : join(process.cwd(), 'uploads');
 
   if (!existsSync(dirPath)) {
     mkdirSync(dirPath, { recursive: true });
   }
 
-  file
-    .createReadStream()
-    .pipe(createWriteStream(`${dirPath}/${newFilename}`))
-    .on('finish', () => {})
-    .on('error', (error) => {
-      console.error('File upload error:', error);
-    });
+  const filePath = join(dirPath, newFilename);
+  await new Promise<void>((resolve, reject) => {
+    const writeStream = createWriteStream(filePath);
+    file
+      .createReadStream()
+      .on('error', reject)
+      .pipe(writeStream)
+      .on('finish', resolve)
+      .on('error', reject);
+  });
 
   const host = req.get('host');
-  const protocol = host?.includes('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}/uploads/${directoryName}/${newFilename}`;
+  const forwardedProto = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const protocol =
+    forwardedProto || (host?.includes('localhost') ? 'http' : 'https');
+  const urlPath = cleanDir
+    ? `/uploads/${cleanDir}/${newFilename}`
+    : `/uploads/${newFilename}`;
+  return `${protocol}://${host}${urlPath}`;
 }

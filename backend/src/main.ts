@@ -49,10 +49,21 @@ async function bootstrap() {
       staticOptions,
     ),
   );
+  const expressApp = app.getHttpAdapter().getInstance() as express.Express;
+  expressApp.set('trust proxy', 1);
+  expressApp.get('/health', (_req: express.Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
+  const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
     credentials: true,
-    origin: [process.env.CLIENT_URL ?? ''.split(',')],
+    origin: allowedOrigins,
   });
-  await app.listen(process.env.PORT ?? 4000);
+  await app.listen(process.env.PORT ?? 4000, '0.0.0.0');
 }
 void bootstrap();

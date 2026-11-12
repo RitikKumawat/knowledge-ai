@@ -91,23 +91,29 @@ import { Request, Response } from 'express';
       },
     }),
     PubSubModule,
-    BullModule.forRoot({
-      ...(process.env.NODE_ENV === 'production' && process.env.UPSTASH_REDIS_TCP
-        ? {
-            url: process.env.UPSTASH_REDIS_TCP,
+    BullModule.forRoot(
+      (() => {
+        const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_TCP;
+        if (process.env.NODE_ENV === 'production' && redisUrl) {
+          return {
+            url: redisUrl,
             redis: {
-              tls: {
-                rejectUnauthorized: false,
-              },
+              maxRetriesPerRequest: null,
+              enableReadyCheck: false,
+              ...(redisUrl.startsWith('rediss://')
+                ? { tls: { rejectUnauthorized: false } }
+                : {}),
             },
-          }
-        : {
-            redis: {
-              host: process.env.REDIS_HOST || 'localhost',
-              port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
-            },
-          }),
-    }),
+          };
+        }
+        return {
+          redis: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
+          },
+        };
+      })(),
+    ),
     MongooseModule.forRoot(process.env.DATABASE_URL as string),
     VectorDbModule,
     DocumentsModule,
