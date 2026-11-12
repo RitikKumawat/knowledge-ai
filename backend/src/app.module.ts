@@ -64,8 +64,15 @@ import { Request, Response } from 'express';
           const cookies: Record<string, string> = {};
           if (cookieHeader) {
             cookieHeader.split(';').forEach((item: string) => {
-              const parts = item.split('=');
-              cookies[parts[0].trim()] = (parts[1] || '').trim();
+              const eqIdx = item.indexOf('=');
+              if (eqIdx === -1) return;
+              const name = item.slice(0, eqIdx).trim();
+              const rawValue = item.slice(eqIdx + 1).trim();
+              try {
+                cookies[name] = decodeURIComponent(rawValue);
+              } catch {
+                cookies[name] = rawValue;
+              }
             });
           }
           return {

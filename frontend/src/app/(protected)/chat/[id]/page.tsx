@@ -14,6 +14,7 @@ import { Send, Plus, Sparkles } from "lucide-react";
 import styles from "./Chat.module.scss";
 import { useDisclosure } from "@mantine/hooks";
 import { DocumentSelectModal } from "@/components/DocumentSelectModal";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
 import { notifications } from "@mantine/notifications";
 
 export default function ChatPage() {
@@ -38,6 +39,8 @@ export default function ChatPage() {
   const [localMessages, setLocalMessages] = useState<Array<{ _id: string; role: string; content: string }>>([]);
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const streamIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sources, setSources] = useState<Array<{ documentId: string; chunk: string; similarity: number }>>([]);
 
   const [prevMessagesData, setPrevMessagesData] = useState(messagesData);
@@ -63,11 +66,26 @@ export default function ChatPage() {
     }
   }, [sessionData, openDocModal]);
 
+  useEffect(() => {
+    return () => {
+      if (streamIdleTimerRef.current) {
+        clearTimeout(streamIdleTimerRef.current);
+      }
+    };
+  }, []);
+
   useSubscription(AnswerStreamDocument, {
     variables: { sessionId },
     onData: ({ data }) => {
       if (data.data?.answerStream) {
         setIsWaiting(false);
+        setIsStreaming(true);
+        if (streamIdleTimerRef.current) {
+          clearTimeout(streamIdleTimerRef.current);
+        }
+        streamIdleTimerRef.current = setTimeout(() => {
+          setIsStreaming(false);
+        }, 1200);
         setStreamingMessage((prev) => prev + data.data!.answerStream);
       }
     },
@@ -94,6 +112,10 @@ export default function ChatPage() {
       { _id: `user_${Date.now()}`, role: "USER", content: question },
     ]);
 
+    if (streamIdleTimerRef.current) {
+      clearTimeout(streamIdleTimerRef.current);
+    }
+    setIsStreaming(false);
     setIsWaiting(true);
 
     try {
@@ -166,7 +188,14 @@ export default function ChatPage() {
                   : styles.assistantMessage
               }`}
             >
-              <Text>{msg.content}</Text>
+              {msg.role === "USER" ? (
+                <Text style={{ whiteSpace: "pre-wrap" }}>{msg.content}</Text>
+              ) : (
+                <MarkdownMessage
+                  content={msg.content}
+                  className={styles.markdownBody}
+                />
+              )}
             </Box>
           ))}
 
@@ -178,12 +207,11 @@ export default function ChatPage() {
 
           {streamingMessage && (
             <Box className={`${styles.message} ${styles.assistantMessage}`}>
-              <Text>
-                {streamingMessage}
-                <span style={{ marginLeft: 4, animation: "blink 1s step-end infinite" }}>
-                  ▍
-                </span>
-              </Text>
+              <MarkdownMessage
+                content={streamingMessage}
+                className={styles.markdownBody}
+                showCursor={isStreaming}
+              />
             </Box>
           )}
           <div ref={bottomRef} />

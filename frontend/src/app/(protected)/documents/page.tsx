@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Upload, Trash2, RefreshCw, Eye } from "lucide-react";
 import { Modal, Button, Text, Group } from "@mantine/core";
 import { FTable, ColumnDef } from "../../../ui/FTable/FTable";
@@ -22,10 +22,13 @@ export default function DocumentsPage() {
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [activePage, setActivePage] = useState(1);
   
-  const { data, loading, refetch } = useQuery(GetDocumentsDocument, {
-    variables: { pagination: { page: activePage, limit: 10 } },
-    fetchPolicy: "cache-and-network",
-  });
+  const { data, loading, refetch, startPolling, stopPolling } = useQuery(
+    GetDocumentsDocument,
+    {
+      variables: { pagination: { page: activePage, limit: 10 } },
+      fetchPolicy: "cache-and-network",
+    }
+  );
   
   const [deleteDocument, { loading: isDeleting }] = useMutation(DeleteDocumentDocument);
   const [reprocessDocument] = useMutation(ReprocessDocumentDocument);
@@ -33,9 +36,28 @@ export default function DocumentsPage() {
   useSubscription(DocumentStatusUpdatedDocument, {
     onData: () => {
       // Refetch the data when a document's status updates via WebSocket
-      refetch();
+      void refetch();
+    },
+    onError: (err) => {
+      console.error("Document status subscription error:", err);
     },
   });
+
+  useEffect(() => {
+    const hasPendingOrProcessing = data?.documents?.items?.some(
+      (doc) => doc.status === "PENDING" || doc.status === "PROCESSING"
+    );
+
+    if (hasPendingOrProcessing) {
+      startPolling(3000);
+    } else {
+      stopPolling();
+    }
+
+    return () => {
+      stopPolling();
+    };
+  }, [data?.documents?.items, startPolling, stopPolling]);
 
   const handleDelete = (id: string) => {
     setDocumentToDelete(id);
@@ -142,7 +164,7 @@ export default function DocumentsPage() {
       <FTable
         columns={columns}
         data={data?.documents?.items || []}
-        loading={loading}
+        loading={loading && !data?.documents?.items?.length}
         noDataText="No documents found. Upload a document to get started."
         totalServerPages={data?.documents?.totalPages}
         activeServerPage={activePage}

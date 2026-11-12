@@ -149,7 +149,7 @@ export class AuthService {
 
   async validateRequest(
     req: AuthenticatedRequest,
-    res: Response,
+    res?: Response,
   ): Promise<UserDocument> {
     const payload = await this.getValidPayload(req, res);
 
@@ -168,7 +168,7 @@ export class AuthService {
 
   private async getValidPayload(
     req: AuthenticatedRequest,
-    res: Response,
+    res?: Response,
   ): Promise<JwtPayload> {
     const accessToken = req.cookies?.[ACCESS_TOKEN_COOKIE];
 
@@ -188,7 +188,7 @@ export class AuthService {
 
   private async refreshTokens(
     req: AuthenticatedRequest,
-    res: Response,
+    res?: Response,
   ): Promise<JwtPayload> {
     const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
 
@@ -224,19 +224,21 @@ export class AuthService {
       sessionId: payload.sessionId,
     };
 
-    const newAccessToken =
-      await this.tokenService.generateAccessToken(newPayload);
-    const newRefreshToken =
-      await this.tokenService.generateRefreshToken(newPayload);
-    const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
+    if (res) {
+      const newAccessToken =
+        await this.tokenService.generateAccessToken(newPayload);
+      const newRefreshToken =
+        await this.tokenService.generateRefreshToken(newPayload);
+      const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, 10);
 
-    await this.userSessionService.updateRefreshTokenHash(
-      session._id,
-      newRefreshTokenHash,
-    );
+      await this.userSessionService.updateRefreshTokenHash(
+        session._id,
+        newRefreshTokenHash,
+      );
 
-    this.cookieService.setAccessToken(res, newAccessToken);
-    this.cookieService.setRefreshToken(res, newRefreshToken);
+      this.cookieService.setAccessToken(res, newAccessToken);
+      this.cookieService.setRefreshToken(res, newRefreshToken);
+    }
 
     return newPayload;
   }

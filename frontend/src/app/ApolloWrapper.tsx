@@ -31,6 +31,10 @@ function makeClient() {
       ? new GraphQLWsLink(
           createClient({
             url: `${process.env.NEXT_PUBLIC_BASE_URL?.replace("http", "ws")}/graphql`,
+            lazy: true,
+            lazyCloseTimeout: 3000,
+            retryAttempts: 10,
+            shouldRetry: () => true,
           })
         )
       : null;
@@ -80,7 +84,13 @@ function makeClient() {
       : uploadLink;
 
   return new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      typePolicies: {
+        UploadedDoc: {
+          keyFields: ["_id"],
+        },
+      },
+    }),
     link: ApolloLink.from([errorLink, splitLink]),
   });
 }

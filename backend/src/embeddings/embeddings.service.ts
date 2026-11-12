@@ -1,15 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import ollama from 'ollama';
-import { InferenceClient } from '@huggingface/inference';
+import { GoogleGenAI } from '@google/genai';
 
 @Injectable()
 export class EmbeddingsService {
+  private static readonly GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001';
+  private static readonly EMBEDDING_DIMENSIONS = 768;
+
   private readonly isProduction = process.env.NODE_ENV === 'production';
-  private readonly hf: InferenceClient | null = null;
+  private readonly ai: GoogleGenAI | null = null;
 
   constructor() {
     if (this.isProduction) {
-      this.hf = new InferenceClient(process.env.HF_TOKEN);
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          'GEMINI_API_KEY is required when NODE_ENV is production',
+        );
+      }
+      this.ai = new GoogleGenAI({ apiKey });
     }
   }
 
@@ -22,22 +31,23 @@ export class EmbeddingsService {
   async generateEmbeddingsForSingleChunk(chunk: string): Promise<number[]> {
     if (this.isProduction) {
       try {
-        const response = await this.hf!.featureExtraction({
-          model: 'sentence-transformers/all-mpnet-base-v2',
-          inputs: chunk,
+        const response = await this.ai!.models.embedContent({
+          model: EmbeddingsService.GEMINI_EMBEDDING_MODEL,
+          contents: chunk,
+          config: {
+            taskType: 'RETRIEVAL_QUERY',
+            outputDimensionality: EmbeddingsService.EMBEDDING_DIMENSIONS,
+          },
         });
 
-        const arr = response as number[] | number[][] | number[][][];
-        if (!arr || arr.length === 0) {
-          throw new Error('No embeddings returned from Hugging Face');
+        const values = response.embeddings?.[0]?.values;
+        if (!values || values.length === 0) {
+          throw new Error('No embeddings returned from Gemini API');
         }
 
-        if (Array.isArray(arr[0])) {
-          return arr[0] as number[];
-        }
-        return arr as number[];
+        return this.normalizeVector(values);
       } catch (error) {
-        throw new Error('Failed to generate embeddings using Hugging Face', {
+        throw new Error('Failed to generate embeddings using Gemini API', {
           cause: error,
         });
       }
@@ -67,14 +77,30 @@ export class EmbeddingsService {
 
         while (retries > 0 && !success) {
           try {
-            const response = await this.hf!.featureExtraction({
-              model: 'sentence-transformers/all-mpnet-base-v2',
-              inputs: batch,
+            const response = await this.ai!.models.embedContent({
+              model: EmbeddingsService.GEMINI_EMBEDDING_MODEL,
+              contents: batch,
+              config: {
+                taskType: 'RETRIEVAL_DOCUMENT',
+                outputDimensionality: EmbeddingsService.EMBEDDING_DIMENSIONS,
+              },
             });
 
-            // HuggingFace returns number[][] for array of strings
-            const embeddings = response as number[][];
-            allEmbeddings.push(...embeddings);
+            const embeddings = response.embeddings ?? [];
+            if (embeddings.length !== batch.length) {
+              throw new Error(
+                `Expected ${batch.length} embeddings from Gemini API, got ${embeddings.length}`,
+              );
+            }
+
+            for (const item of embeddings) {
+              if (!item.values || item.values.length === 0) {
+                throw new Error(
+                  'Empty embedding vector returned from Gemini API',
+                );
+              }
+              allEmbeddings.push(this.normalizeVector(item.values));
+            }
             success = true;
           } catch (error: unknown) {
             const isRateLimit =
@@ -87,7 +113,7 @@ export class EmbeddingsService {
               retries--;
               if (retries === 0) throw error;
               console.warn(
-                `Hugging Face API rate limited (429). Retrying in 5 seconds... (${retries} retries left)`,
+                `Gemini API rate limited (429). Retrying in 5 seconds... (${retries} retries left)`,
               );
               await new Promise((resolve) => setTimeout(resolve, 5000));
             } else {
@@ -96,7 +122,7 @@ export class EmbeddingsService {
           }
         }
 
-        // Delay between batches to respect Hugging Face free tier limits
+        // Delay between batches to respect Gemini free tier RPM limits
         if (i + batchSize < chunks.length) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
@@ -104,10 +130,16 @@ export class EmbeddingsService {
 
       return allEmbeddings;
     } catch (error) {
-      throw new Error('Failed to generate embeddings using Hugging Face', {
+      throw new Error('Failed to generate embeddings using Gemini API', {
         cause: error,
       });
     }
+  }
+
+  private normalizeVector(values: number[]): number[] {
+    const norm = Math.sqrt(values.reduce((sum, val) => sum + val * val, 0));
+    if (norm === 0) return values;
+    return values.map((val) => val / norm);
   }
 
   private async generateOllamaEmbeddings(

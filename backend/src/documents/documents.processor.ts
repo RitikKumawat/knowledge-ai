@@ -122,6 +122,7 @@ export class DocumentsProcessor {
       doc.status = 'COMPLETED';
       doc.pages = pagesCount;
       doc.chunksCount = chunksCount;
+      doc.errorMessage = undefined;
       await doc.save();
       void this.pubSub.publish('documentStatusUpdated', {
         documentStatusUpdated: doc,

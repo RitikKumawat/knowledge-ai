@@ -86,12 +86,12 @@ export class DocumentsResolver {
   @Subscription(() => UploadedDoc, {
     filter: (
       payload: { documentStatusUpdated: UploadedDoc },
-      variables: Record<string, unknown>,
+      _variables: Record<string, unknown>,
       context: GraphqlContext,
     ) => {
       const doc = payload.documentStatusUpdated;
-      const user = context.req.user;
-      if (!user) return false;
+      const user = context?.req?.user;
+      if (!user || !doc?.uploadedBy) return false;
       return doc.uploadedBy.toString() === user._id.toString();
     },
   })

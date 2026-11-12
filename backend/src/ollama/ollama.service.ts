@@ -5,7 +5,7 @@ import { Groq } from 'groq-sdk';
 @Injectable()
 export class OllamaService {
   private static readonly LOCAL_MODEL = 'qwen2.5-coder:14b';
-  private static readonly PROD_MODEL = 'llama-3.1-8b-instant';
+  private static readonly PROD_MODEL = 'openai/gpt-oss-20b';
   private readonly isProduction = process.env.NODE_ENV === 'production';
   private readonly groq: Groq | null = null;
 
